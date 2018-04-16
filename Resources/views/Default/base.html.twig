@@ -1,0 +1,22 @@
+{% extends 'ThemeAplicativoBundle:Default:base.html.twig'   %} 
+
+{% block menu %} 
+    {% block submenus %}
+        <li><a class="opcion" href="#">Inicio</a>
+            <div>
+                <ul class="submenu" >
+                    <li>
+                        <a href="{{ path(path_home) }}" target="_top" class="sub-menu">Inicio</a>
+                    </li>		
+                </ul>
+            </div>
+        </li>
+    {% endblock %}
+{% endblock %} 
+
+{% block jquery %}
+    <!--BLOQUE JQUERY MENSAJES FLASH -->
+    {{parent()}}
+    {% include 'ThemeAplicativoBundle:Componentes:mensajeFlash.html.twig' %}
+{% endblock %}
+

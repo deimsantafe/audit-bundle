@@ -1,0 +1,55 @@
+{
+	"name" : "stg/audit-bundle",
+	"type" : "symfony-bundle",
+	"description" : "Bundle de auditoría",
+	"keywords" : [
+		"Auditoria",
+		"Audit",
+                "Annotation",
+		"Doctrine"
+	],
+	"homepage" : "http://www.santafe.gov.ar",
+	"authors" : [{
+			"name" : "Aguilar, Lucas",
+			"homepage" : "http://www.santafe.gov.ar",
+			"email" : "laguilar@santafe.gov.ar"
+		}, {
+			"name" : "Baroni, Federico",
+			"homepage" : "http://www.santafe.gov.ar",
+			"email" : "fbaroni@santafe.gov.ar"
+		}, {
+			"name" : "Godoy, Matias",
+			"homepage" : "http://www.santafe.gov.ar",
+			"email" : "mgodoy@santafe.gov.ar"
+		}
+	],
+	"require" : {
+		"php" : ">=5.3.3",
+		"symfony/framework-bundle" : "~2.3"
+	},
+	"autoload" : {
+		"psr-0" : {
+			"STG\\DEIM\\Auditoria\\Bundle\\AuditoriaBundle" : ""
+		}
+	},
+	"scripts": {
+	  "post-install-cmd": [
+		"Incenteev\\ParameterHandler\\ScriptHandler::buildParameters",
+		"Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
+		"Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
+		"Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets",
+		"Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installRequirementsFile",
+		"php app/console doctrine:database:create",
+		"php app/console doctrine:schema:update --force"
+	  ],
+	  "post-update-cmd": [
+		"Incenteev\\ParameterHandler\\ScriptHandler::buildParameters",
+		"Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::buildBootstrap",
+		"Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::clearCache",
+		"Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installAssets",
+		"Sensio\\Bundle\\DistributionBundle\\Composer\\ScriptHandler::installRequirementsFile",
+		"php app/console doctrine:schema:update --force"
+	  ]
+	},
+	"target-dir" : "STG/DEIM/Auditoria/Bundle/AuditoriaBundle"
+}

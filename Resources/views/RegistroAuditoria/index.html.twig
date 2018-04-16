@@ -1,0 +1,92 @@
+{% extends 'AuditoriaBundle:Default:base.html.twig' %}
+
+{% block cuerpo %}
+
+{% set breadoption = { 'Inicio' :  path(path_home) ,'Auditoría':'#', 'Listado':'#'} %}
+{% include  'ThemeAplicativoBundle:Default:breadcrumb.html.twig' %}
+    
+{% include 'ThemeAplicativoBundle:Componentes:filtros.html.twig' %}
+
+<div class="row">
+	<div class="twelvecol">	  
+	
+		{% embed  'ThemeAplicativoBundle:Componentes:tabla.html.twig' %}
+		
+                        {% set currentUUID = '' %}
+			{% block TituloTabla %}Listado de Registros de auditoría{% endblock %}
+			
+			{% block headerTabla %}
+			
+				<td class="columns-dest" {% if paginacion.isSorted('a.usuario') %} class="sorted" {% endif %}> {{ knp_pagination_sortable(paginacion, 'Usuario', 'a.usuario') }}</td>
+				<td class="columns-dest" {% if paginacion.isSorted('a.ipCliente') %} class="sorted" {% endif %}> {{ knp_pagination_sortable(paginacion, 'IP', 'a.ipCliente') }}</td>
+                                <td class="columns-dest" {% if paginacion.isSorted('a.fecha') %} class="sorted" {% endif %}> {{ knp_pagination_sortable(paginacion, 'Fecha', 'a.fecha') }}</td>
+                                <td class="columns-dest">Modulo</td>
+                                <td class="columns-dest">Acción</td>
+                                <td class="columns-dest">Nombre tabla</td>
+                                <td class="columns-dest">ID registro</td>
+                                <td class="columns-dest">Campo</td>
+                                <td class="columns-dest">Valor Anterior</td>
+                                <td class="columns-dest">Valor nuevo</td>
+                                <td class="columns-dest">Nombre evento</td>
+                        {% endblock %}
+			
+			
+			{% block cuerpoTabla %}
+						
+                            {% for entidad in paginacion %}
+                                {% if entidad.uuid != currentUUID %}
+                                    {% set currentUUID = entidad.uuid %}
+                                    <tr>
+                                        <td><strong>{{ entidad.getUsuario() }}</strong></td>
+                                        <td><strong>{{ entidad.getIpCliente() }}</strong></td>
+                                        <td><strong>{{ entidad.getFecha() | date("d/m/Y H:i:s") }}</strong></td>
+                                        <td><strong>{{ entidad.getNombreCortoControlador() }} </strong></td>
+                                        <td><strong>{{ entidad.getNombreAccion() }} </strong></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        
+                                    </tr>
+                                {% endif %}
+                                
+
+                                <tr>
+
+
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td>{{ entidad.getNombreTabla() }}</td>
+                                    <td>{{ entidad.getEntidadPk() }}</td>
+                                    <td>{{ entidad.getCampo() }}</td>
+                                    <td>{{ entidad.getValorAnterior() }}</td>
+                                    <td>{{ entidad.getValorNuevo() }}</td>
+                                    <td>{{ entidad.getNombreEvento() }}</td>
+                                    
+				</tr>
+
+				{% else %}
+                                    
+                                {% endfor %}    
+			
+			
+			{% endblock %}
+		
+                    {% block paginacion %}
+                        {{ knp_pagination_render(paginacion) }}
+                    {% endblock %}
+		{% endembed %}
+	
+		
+		
+	</div>
+</div>
+
+{% endblock %}
+
+
