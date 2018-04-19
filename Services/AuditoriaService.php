@@ -35,6 +35,7 @@ class AuditoriaService
         $updates = $uow->getScheduledEntityUpdates();
         $deletions = $uow->getScheduledEntityDeletions();
 
+
         foreach ($insertions as $entidad) {
             if ($this->isAuditable($entidad)) {
                 $this->auditEntity($entidad, $em, 'INSERT');
@@ -51,18 +52,28 @@ class AuditoriaService
                 $this->auditEntity($entidad, $em, 'REMOVE');
             }
         }
+
+        foreach ($uow->getScheduledCollectionUpdates() as $association) {
+            $entidadPadre = $association->getOwner();
+
+            if ($this->isAuditable($entidadPadre)) {
+                $this->guardarRegistrosDeAuditoriaCollection(
+                    $em, $association);
+            }
+
+        }
     }
 
     public function auditEntity($entidad, $entityManager, $nombreEvento)
     {
         $this->logger->info($nombreEvento . ' Auditando entidad ' .
-                get_class($entidad));
+            get_class($entidad));
         try {
             $this->guardarRegistrosDeAuditoria(
-                    $entityManager, $entidad, $nombreEvento);
+                $entityManager, $entidad, $nombreEvento);
         } catch (\Exception $ex) {
             $this->logger->error('Error al auditar ' . get_class($entidad) .
-                    ' = ' . $ex->getMessage() . '(' . $ex->getCode() . ')');
+                ' = ' . $ex->getMessage() . '(' . $ex->getCode() . ')');
         }
     }
 
@@ -86,30 +97,29 @@ class AuditoriaService
         //como en onFlush ya se calcularon los cambios, tenemos que calcularlos nuevamente
         //TODO refactor para casos de muchos ingresos
         $registroMetadata = $em
-                ->getClassMetadata('STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Entity\RegistroAuditoria');
+            ->getClassMetadata('STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Entity\RegistroAuditoria');
 
         $nombreUsuarioActual = ($this->container->get('security.context')->getToken() &&
-                $this->container->get('security.context')->getToken()->getUser() != 'anon.') ?
-                $this->container->get('security.context')->getToken()->getUser()->getUsername() : 'ANONIMO';
+            $this->container->get('security.context')->getToken()->getUser() != 'anon.') ?
+            $this->container->get('security.context')->getToken()->getUser()->getId() : 'ANONIMO';
 
         $uuid = $this->guid();
 
         if ($nombreEvento == 'INSERT' || $nombreEvento == 'UPDATE') {
-
             $changeSet = $uow->getEntityChangeSet($entidad);
 
             foreach ($changeSet as $nombreCampo => $change) {
 
                 $registroAuditoria = new RegistroAuditoria();
                 $registroAuditoria->setNombreTabla($em->
-                                getClassMetadata(get_class($entidad))->getTableName());
+                getClassMetadata(get_class($entidad))->getTableName());
                 $registroAuditoria->setUuid($uuid);
                 $registroAuditoria->setEntidadPK($entidad->getId());
                 $registroAuditoria->setUsuario($nombreUsuarioActual);
                 $registroAuditoria->setIpCliente($this->container->get('request')->getClientIp());
                 $registroAuditoria->setCampo($nombreCampo);
-                $registroAuditoria->setValorAnterior($change[0]);
-                $registroAuditoria->setValorNuevo($change[1]);
+                $registroAuditoria->setValorAnterior((is_object($change[0]) && !($change[0] instanceof \DateTime)) ? $change[0]->getId() : $change[0]);
+                $registroAuditoria->setValorNuevo((is_object($change[1]) && !($change[1] instanceof \DateTime)) ? $change[1]->getId() : $change[1]);
                 $registroAuditoria->setNombreEvento($nombreEvento);
                 $registroAuditoria->setFecha(new \DateTime('now'));
                 $registroAuditoria->setEntidad(get_class($entidad));
@@ -117,6 +127,7 @@ class AuditoriaService
 
                 $em->persist($registroAuditoria);
                 $uow->computeChangeSet($registroMetadata, $registroAuditoria);
+
             }
         } elseif ($nombreEvento == 'REMOVE') {
 
@@ -126,16 +137,90 @@ class AuditoriaService
 
                 $registroAuditoria = new RegistroAuditoria();
                 $registroAuditoria->setNombreTabla($em->
-                                getClassMetadata(get_class($entidad))->getTableName());
+                getClassMetadata(get_class($entidad))->getTableName());
                 $registroAuditoria->setUuid($uuid);
                 $registroAuditoria->setEntidadPK($entidad->getId());
                 $registroAuditoria->setUsuario($nombreUsuarioActual);
                 $registroAuditoria->setIpCliente($this->container->get('request')->getClientIp());
                 $registroAuditoria->setCampo($nombreCampo);
-                $registroAuditoria->setValorAnterior($change);
+                $registroAuditoria->setValorAnterior(is_object($change) && !($change instanceof \DateTime) ? $change->getId() : $change);
                 $registroAuditoria->setNombreEvento($nombreEvento);
                 $registroAuditoria->setFecha(new \DateTime('now'));
                 $registroAuditoria->setEntidad(get_class($entidad));
+                $this->getAccionNegocio($registroAuditoria);
+
+                $em->persist($registroAuditoria);
+                $uow->computeChangeSet($registroMetadata, $registroAuditoria);
+            }
+        }
+    }
+
+
+    private function guardarRegistrosDeAuditoriaCollection($em, $entidad, $nombreEvento = "")
+    {
+
+        $uow = $em->getUnitOfWork();
+        //como en onFlush ya se calcularon los cambios, tenemos que calcularlos nuevamente
+        //TODO refactor para casos de muchos ingresos
+        $registroMetadata = $em
+            ->getClassMetadata('STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Entity\RegistroAuditoria');
+
+        $nombreUsuarioActual = ($this->container->get('security.context')->getToken() &&
+            $this->container->get('security.context')->getToken()->getUser() != 'anon.') ?
+            $this->container->get('security.context')->getToken()->getUser()->getId() : 'ANONIMO';
+
+        $uuid = $this->guid();
+
+        $entidadPadre = $entidad->getOwner();
+
+        $deleted = $entidad->getDeleteDiff();
+
+        $inserted = $entidad->getInsertDiff();
+
+
+        if (!empty($inserted)) {
+
+            $nombreEvento = 'INSERT';
+
+            foreach ($inserted as $key => $value) {
+
+                $registroAuditoria = new RegistroAuditoria();
+                $registroAuditoria->setNombreTabla($em->
+                getClassMetadata(get_class($value))->getTableName());
+                $registroAuditoria->setUuid($uuid);
+                $registroAuditoria->setEntidadPK($entidadPadre->getId());
+                $registroAuditoria->setUsuario($nombreUsuarioActual);
+                $registroAuditoria->setIpCliente($this->container->get('request')->getClientIp());
+                $registroAuditoria->setCampo("");
+                $registroAuditoria->setValorNuevo($value->getId());
+                $registroAuditoria->setNombreEvento($nombreEvento);
+                $registroAuditoria->setFecha(new \DateTime('now'));
+                $registroAuditoria->setEntidad(get_class($entidadPadre));
+                $this->getAccionNegocio($registroAuditoria);
+
+                $em->persist($registroAuditoria);
+                $uow->computeChangeSet($registroMetadata, $registroAuditoria);
+            }
+        }
+
+        if (!empty($deleted)) {
+
+            $nombreEvento = 'DELETE';
+
+            foreach ($deleted as $key => $value) {
+
+                $registroAuditoria = new RegistroAuditoria();
+                $registroAuditoria->setNombreTabla($em->
+                getClassMetadata(get_class($value))->getTableName());
+                $registroAuditoria->setUuid($uuid);
+                $registroAuditoria->setEntidadPK($entidadPadre->getId());
+                $registroAuditoria->setUsuario($nombreUsuarioActual);
+                $registroAuditoria->setIpCliente($this->container->get('request')->getClientIp());
+                $registroAuditoria->setCampo("");
+                $registroAuditoria->setValorAnterior($value->getId());
+                $registroAuditoria->setNombreEvento($nombreEvento);
+                $registroAuditoria->setFecha(new \DateTime('now'));
+                $registroAuditoria->setEntidad(get_class($entidadPadre));
                 $this->getAccionNegocio($registroAuditoria);
 
                 $em->persist($registroAuditoria);
@@ -149,16 +234,16 @@ class AuditoriaService
         if (function_exists('com_create_guid')) {
             return com_create_guid();
         } else {
-            mt_srand((double) microtime() * 10000); //optional for php 4.2.0 and up.
+            mt_srand((double)microtime() * 10000); //optional for php 4.2.0 and up.
             $charid = strtoupper(md5(uniqid(rand(), true)));
             $hyphen = chr(45); // "-"
             $uuid = chr(123)// "{"
-                    . substr($charid, 0, 8) . $hyphen
-                    . substr($charid, 8, 4) . $hyphen
-                    . substr($charid, 12, 4) . $hyphen
-                    . substr($charid, 16, 4) . $hyphen
-                    . substr($charid, 20, 12)
-                    . chr(125); // "}"
+                . substr($charid, 0, 8) . $hyphen
+                . substr($charid, 8, 4) . $hyphen
+                . substr($charid, 12, 4) . $hyphen
+                . substr($charid, 16, 4) . $hyphen
+                . substr($charid, 20, 12)
+                . chr(125); // "}"
             return trim($uuid, "{}");
         }
     }
