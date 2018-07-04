@@ -4,7 +4,6 @@ namespace STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use \Symfony\Component\Validator\Constraints as Assert;
-use STG\DEIM\Themes\Bundles\AplicativoBundle\Annotation\Filter;
 
 /**
  * RegistroAuditoria
@@ -28,7 +27,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="usuario", type="string", length=45, nullable=false)
-     * @Filter(type="text")
      */
     private $usuario;
 
@@ -36,7 +34,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="ip_cliente", type="string", length=45, nullable=false)
-     * @Filter(type="text")
      */
     private $ipCliente;
 
@@ -44,7 +41,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="entidad", type="text", nullable=false)
-     * @Filter(type="text")
      */
     private $entidad;
 
@@ -52,7 +48,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="fecha",  type="datetime", length=255, nullable=false)
-     * @Filter(type="fecha")
      */
     private $fecha;
 
@@ -60,7 +55,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="campo", type="text", nullable=false)
-     * @Filter(type="text")
      */
     private $campo;
 
@@ -68,7 +62,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="valor_anterior", type="text", nullable=true)
-     * @Filter(type="text")
      */
     private $valorAnterior;
 
@@ -76,7 +69,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="valor_nuevo", type="text", nullable=true)
-     * @Filter(type="text")
      */
     private $valorNuevo;
 
@@ -84,7 +76,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="nombre_evento", type="string", length=45, nullable=false)
-     * @Filter(type="text")
      */
     private $nombreEvento;
 
@@ -114,7 +105,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="nombre_controlador", type="string", length=255, nullable=false)
-     * @Filter(type="text", label="Acción negocio")
      */
     private $nombreControlador;
 
@@ -123,7 +113,6 @@ class RegistroAuditoria
      * @var string
      *
      * @ORM\Column(name="nombre_accion", type="string", length=255, nullable=false)
-     * @Filter(type="text")
      */
     private $nombreAccion;
 
