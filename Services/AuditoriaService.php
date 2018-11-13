@@ -5,20 +5,22 @@ namespace STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Services;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
+use Psr\Log\LoggerInterface;
 use STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Annotation\Auditable;
 use STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Entity\RegistroAuditoria;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorage;
 
 class AuditoriaService
 {
 
     protected $logger;
-    protected $container;
+    protected $tokenStorage;
     protected $reader;
 
-    public function __construct($container)
+    public function __construct(LoggerInterface $logger, TokenStorage $tokenStorage)
     {
-        $this->container = $container;
-        $this->logger = $this->container->get('logger');
+        $this->logger = $logger;
+        $this->tokenStorage = $tokenStorage;
         $this->reader = new AnnotationReader();
     }
 
@@ -99,9 +101,9 @@ class AuditoriaService
         $registroMetadata = $em
             ->getClassMetadata('STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Entity\RegistroAuditoria');
 
-        $nombreUsuarioActual = ($this->container->get('security.context')->getToken() &&
-            $this->container->get('security.context')->getToken()->getUser() != 'anon.') ?
-            $this->container->get('security.context')->getToken()->getUser()->getId() : 'ANONIMO';
+        $nombreUsuarioActual = ($this->getToken() &&
+            $this->getToken()->getUser() != 'anon.') ?
+            $this->getToken()->getUser()->getId() : 'ANONIMO';
 
         $uuid = $this->guid();
 
@@ -165,9 +167,9 @@ class AuditoriaService
         $registroMetadata = $em
             ->getClassMetadata('STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Entity\RegistroAuditoria');
 
-        $nombreUsuarioActual = ($this->container->get('security.context')->getToken() &&
-            $this->container->get('security.context')->getToken()->getUser() != 'anon.') ?
-            $this->container->get('security.context')->getToken()->getUser()->getId() : 'ANONIMO';
+        $nombreUsuarioActual = ($this->getToken() &&
+            $this->getToken()->getUser() != 'anon.') ?
+            $this->getToken()->getUser()->getId() : 'ANONIMO';
 
         $uuid = $this->guid();
 
@@ -266,6 +268,22 @@ class AuditoriaService
         $registroAuditoria->setNombreControlador($controllerClass);
 
         $registroAuditoria->setNombreAccion($controllerMethod);
+    }
+
+    /**
+     * @return TokenStorage
+     */
+    public function getTokenStorage()
+    {
+        return $this->tokenStorage;
+    }
+
+    /**
+     * @return null|\Symfony\Component\Security\Core\Authentication\Token\TokenInterface
+     */
+    private function getToken()
+    {
+        return $this->getTokenStorage()->getToken();
     }
 
 }

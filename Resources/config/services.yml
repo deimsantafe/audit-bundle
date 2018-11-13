@@ -4,6 +4,6 @@ parameters:
 services:
     stg.deim.auditoria.auditoria.auditoria:
         class: STG\DEIM\Auditoria\Bundle\AuditoriaBundle\Services\AuditoriaService
-        arguments: ['@service_container']
+        arguments: ['@logger', '@security.token_storage']
         tags:
             - { name: doctrine.event_listener, event: onFlush }
